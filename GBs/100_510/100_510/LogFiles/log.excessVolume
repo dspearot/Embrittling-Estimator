@@ -1,0 +1,292 @@
+shell cd ..
+
+# Variables
+
+include ${GBName}.config
+include 100_510.config
+# Interatomic Potential
+if "${IntPotVar} == 1" then  "variable 		IntPot index 'NiS.eam.alloy'"  else  "variable 		IntPot index 'NiS.ff'"
+variable 		IntPot index 'NiS.eam.alloy'
+
+variable 		a0 equal 3.52
+variable 		ebulkatom equal -4.44999999950988
+
+# Lattice orientations
+variable		gb1x1 equal 1
+variable		gb1x2 equal -5
+variable		gb1x3 equal 0
+variable		gb1y1 equal 5
+variable		gb1y2 equal 1
+variable		gb1y3 equal 0
+variable		gb1z1 equal 0
+variable		gb1z2 equal 0
+variable		gb1z3 equal 1
+variable		gb2x1 equal -1
+variable		gb2x2 equal 5
+variable		gb2x3 equal 0
+variable		gb2y1 equal 5
+variable		gb2y2 equal 1
+variable		gb2y3 equal 0
+variable		gb2z1 equal 0
+variable		gb2z2 equal 0
+variable		gb2z3 equal -1
+
+# Variables for S insertion
+variable        deltamu equal 0.1 #eV
+variable        sigma string 510
+variable        GBRegion1 equal 53.1249
+variable        GBHalfRegionUpper equal 110.23
+variable 		GBHalfRegionLower equal -2.37
+variable        slice equal 5.0
+variable        t equal 948
+variable        seed equal 63241
+#variable 		con equal 7.86 #S/nm^2
+#variable        mu equal -0.4 #eV
+#variable        bulkS equal -2.9371861774248611
+
+# Find the repeating distances
+variable 		square1 equal ${gb1x1}^2+${gb1x2}^2+${gb1x3}^2
+variable 		square1 equal 1^2+${gb1x2}^2+${gb1x3}^2
+variable 		square1 equal 1^2+-5^2+${gb1x3}^2
+variable 		square1 equal 1^2+-5^2+0^2
+variable 		square2 equal ${gb1y1}^2+${gb1y2}^2+${gb1y3}^2
+variable 		square2 equal 5^2+${gb1y2}^2+${gb1y3}^2
+variable 		square2 equal 5^2+1^2+${gb1y3}^2
+variable 		square2 equal 5^2+1^2+0^2
+variable 		square3 equal ${gb1z1}^2+${gb1z2}^2+${gb1z3}^2
+variable 		square3 equal 0^2+${gb1z2}^2+${gb1z3}^2
+variable 		square3 equal 0^2+0^2+${gb1z3}^2
+variable 		square3 equal 0^2+0^2+1^2
+
+variable repDistx equal 2.5495097567963922
+variable repDisty equal 2.5495097567963922
+variable repDistz equal 1.0
+
+# 3 Layer Structure dimensions (Step1 & Step2)
+variable		xlo3Layer equal -0.001
+variable		xhi3Layer equal 1*${a0}*${repDistx}
+variable		xhi3Layer equal 1*3.52*${repDistx}
+variable		xhi3Layer equal 1*3.52*2.54950975679639
+variable		ylo3Layer equal -0.001
+variable		yhi3Layer equal 8*${a0}*${repDisty}
+variable		yhi3Layer equal 8*3.52*${repDisty}
+variable		yhi3Layer equal 8*3.52*2.54950975679639
+variable		zlo3Layer equal -0.001
+variable		zhi3Layer equal 1*${a0}*${repDistz}
+variable		zhi3Layer equal 1*3.52*${repDistz}
+variable		zhi3Layer equal 1*3.52*1
+variable        GB1 equal ${yhi3Layer}/4
+variable        GB1 equal 71.7941947513863/4
+variable        GB2 equal ${yhi3Layer}/4*3
+variable        GB2 equal 71.7941947513863/4*3
+
+# Iteration Numbers
+variable		iter_x equal 10
+variable		iter_y equal 10
+variable		iter_z equal 10
+
+variable		raster_x equal 10
+
+# Box Dimensions for in.Structures and in.SGCMC
+variable		xlo equal -0.001
+variable		xhi equal 1*${a0}*${repDistx}
+variable		xhi equal 1*3.52*${repDistx}
+variable		xhi equal 1*3.52*2.54950975679639
+variable		ylo equal -0.001
+variable		yhi equal 4*${a0}*${repDisty}
+variable		yhi equal 4*3.52*${repDisty}
+variable		yhi equal 4*3.52*2.54950975679639
+variable		zlo equal -0.001
+variable		zhi equal 1*${a0}*${repDistz}
+variable		zhi equal 1*3.52*${repDistz}
+variable		zhi equal 1*3.52*1
+variable		GB1Str equal 2*${a0}*${repDisty}
+variable		GB1Str equal 2*3.52*${repDisty}
+variable		GB1Str equal 2*3.52*2.54950975679639
+variable		FS1Str equal 3*${a0}*${repDisty}
+variable		FS1Str equal 3*3.52*${repDisty}
+variable		FS1Str equal 3*3.52*2.54950975679639
+
+shell mkdir DumpFiles
+WARNING: Shell command 'mkdir' failed with error 'File exists' (../input.cpp:1292)
+shell cd DumpFiles
+shell rm dump.GBnoImpurityDump*
+WARNING: Shell command 'rm' failed with error 'No such file or directory' (../input.cpp:1313)
+shell rm dump.FSnoImpurityDump*
+WARNING: Shell command 'rm' failed with error 'No such file or directory' (../input.cpp:1313)
+shell cd ..
+
+#####################################################
+###############      GB       ########################
+#####################################################
+
+# --------------- INITIALIZATION ------------------
+clear
+if "${IntPotVar} == 1" then "units metal" "atom_style atomic" else "units real" "atom_style charge"
+units metal
+atom_style atomic
+
+dimension 3
+boundary p p p
+
+shell cd RestartFiles
+read_restart 	restart.minEngConf
+  restoring atom style atomic from restart
+  orthogonal box = (0.000540745 0.0113248 -0.000395566) to (8.97273 71.7819 3.5194)
+  2 by 16 by 1 MPI processor grid
+  pair style eam/alloy stores no restart info
+  206 atoms
+  read_restart CPU = 0.00398298 secs
+shell cd ..
+
+# ---------- Define Interatomic Potential ---------------------
+if "${IntPotVar} == 1" then "pair_style      eam/alloy" else "pair_style      reax/c NULL checkqeq no"
+pair_style      eam/alloy
+
+pair_coeff * * ../../${IntPot} Ni Ni Ni Ni
+pair_coeff * * ../../NiS.eam.alloy Ni Ni Ni Ni
+
+if "${IntPotVar} == 0" then "mass 1 58.71" "mass 1 58.71" "mass 1 58.71" "mass 1 58.71"
+
+# ---------- Computations --------------------------
+compute 		csym all centro/atom fcc
+compute 		peratom all pe/atom
+compute 		eatoms all reduce sum c_peratom
+
+run              0
+WARNING: No fixes defined, atoms won't move (../verlet.cpp:52)
+Neighbor list info ...
+  update every 1 steps, delay 10 steps, check yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 8.5
+  ghost atom cutoff = 8.5
+  binsize = 4.25, bins = 3 17 1
+  2 neighbor lists, perpetual/occasional/extra = 1 1 0
+  (1) pair eam/alloy, perpetual
+      attributes: half, newton on
+      pair build: half/bin/atomonly/newton
+      stencil: half/bin/3d/newton
+      bin: standard
+  (2) compute centro/atom, occasional
+      attributes: full, newton on
+      pair build: full/bin/atomonly
+      stencil: full/bin/3d
+      bin: standard
+Per MPI rank memory allocation (min/avg/max) = 3.478 | 3.634 | 3.978 Mbytes
+Step Temp E_pair E_mol TotEng Press 
+      87            0   -911.43527            0   -911.43527   -1.6668672 
+Loop time of 1.52186e-05 on 32 procs for 0 steps with 206 atoms
+
+20.7% CPU use with 32 MPI tasks x no OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0          | 0          | 0          |   0.0 |  0.00
+Neigh   | 0          | 0          | 0          |   0.0 |  0.00
+Comm    | 0          | 0          | 0          |   0.0 |  0.00
+Output  | 0          | 0          | 0          |   0.0 |  0.00
+Modify  | 0          | 0          | 0          |   0.0 |  0.00
+Other   |            | 1.522e-05  |            |       |100.00
+
+Nlocal:    6.4375 ave 9 max 4 min
+Histogram: 3 0 8 0 6 0 5 0 7 3
+Nghost:    798.562 ave 810 max 784 min
+Histogram: 2 2 2 5 3 2 8 0 0 8
+Neighs:    719.25 ave 1019 max 444 min
+Histogram: 3 3 5 2 4 3 2 7 0 3
+FullNghs:  0 ave 0 max 0 min
+Histogram: 32 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 23016
+Ave neighs/atom = 111.728
+Neighbor list builds = 0
+Dangerous builds = 0
+
+variable N equal count(all)
+variable NoGB equal $N
+variable NoGB equal 206
+print "Total number of atoms in GB cell = ${NoGB}"
+Total number of atoms in GB cell = 206
+
+variable 		GBarea equal "lx * lz"
+
+variable 		Volume equal vol
+variable 		VolumeGB equal ${Volume}
+variable 		VolumeGB equal 2266.53139005807
+print "Total volume of GB cell = ${VolumeGB} ang^3"
+Total volume of GB cell = 2266.53139005807 ang^3
+
+# For an FCC, in an ideal setting
+variable 		volperatom equal ${a0}*${a0}*${a0}/4
+variable 		volperatom equal 3.52*${a0}*${a0}/4
+variable 		volperatom equal 3.52*3.52*${a0}/4
+variable 		volperatom equal 3.52*3.52*3.52/4
+# Excess Volume
+variable 		excessVolume equal (${VolumeGB}-${NoGB}*${volperatom})/(2*${GBarea})
+variable 		excessVolume equal (2266.53139005807-${NoGB}*${volperatom})/(2*${GBarea})
+variable 		excessVolume equal (2266.53139005807-206*${volperatom})/(2*${GBarea})
+variable 		excessVolume equal (2266.53139005807-206*10.903552)/(2*${GBarea})
+variable 		excessVolume equal (2266.53139005807-206*10.903552)/(2*31.5802448321581)
+
+
+shell cd Results
+# ---------- Print results ---------------
+print 			"""#### GBarea ####${GBarea}#### VolumeGB ####${VolumeGB}#### NoGB ####${NoGB}#### volperatom=10.903552 ####${volperatom}#### excessVolume=(${VolumeGB}-${NoGB}*${volperatom})/(2*${GBarea}) ####${excessVolume}###### End of File ######				""" file ExcessVolume.dat screen no
+shell cd ..
+
+shell cd ..
+shell cd ..
+fix			 	GBINFO all print 1 "${GBName} ${excessVolume}" append ExcessVolume.${sNo}.dat
+fix			 	GBINFO all print 1 "${GBName} ${excessVolume}" append ExcessVolume.0.dat
+run 			1
+Per MPI rank memory allocation (min/avg/max) = 3.478 | 3.634 | 3.978 Mbytes
+Step Temp E_pair E_mol TotEng Press 
+      87            0   -911.43527            0   -911.43527   -1.6668672 
+100_510 0.322981632449175
+      88            0   -911.43527            0   -911.43527   -1.6668672 
+Loop time of 0.00405786 on 32 procs for 1 steps with 206 atoms
+
+Performance: 21.292 ns/day, 1.127 hours/ns, 246.435 timesteps/s
+96.3% CPU use with 32 MPI tasks x no OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.00011863 | 0.00014232 | 0.00018233 |   0.0 |  3.51
+Neigh   | 0          | 0          | 0          |   0.0 |  0.00
+Comm    | 0.00013817 | 0.00017373 | 0.00019888 |   0.0 |  4.28
+Output  | 2.8996e-05 | 0.003609   | 0.0037333  |   1.1 | 88.94
+Modify  | 8.997e-06  | 0.0001257  | 0.0037136  |   0.0 |  3.10
+Other   |            | 7.125e-06  |            |       |  0.18
+
+Nlocal:    6.4375 ave 9 max 4 min
+Histogram: 3 0 8 0 6 0 5 0 7 3
+Nghost:    798.562 ave 810 max 784 min
+Histogram: 2 2 2 5 3 2 8 0 0 8
+Neighs:    719.25 ave 1019 max 444 min
+Histogram: 3 3 5 2 4 3 2 7 0 3
+FullNghs:  0 ave 0 max 0 min
+Histogram: 32 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 23016
+Ave neighs/atom = 111.728
+Neighbor list builds = 0
+Dangerous builds = 0
+unfix 			GBINFO
+
+shell cd ..
+
+######################################
+# SIMULATION DONE
+print "All done"
+All done
+print "Total number of GB atoms = ${NoGB}"
+Total number of GB atoms = 206
+print "Total volume of GB cell = ${VolumeGB} ang^3"
+Total volume of GB cell = 2266.53139005807 ang^3
+print "Volume per atom = ${volperatom} ang^3"
+Volume per atom = 10.903552 ang^3
+print "Excess volume = ${excessVolume} ang"
+Excess volume = 0.322981632449175 ang
+Total wall time: 0:00:00

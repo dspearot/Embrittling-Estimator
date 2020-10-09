@@ -1,0 +1,411 @@
+shell cd ..
+
+include ${GBName}.config
+include 100_510.config
+# Interatomic Potential
+if "${IntPotVar} == 1" then  "variable 		IntPot index 'NiS.eam.alloy'"  else  "variable 		IntPot index 'NiS.ff'"
+variable 		IntPot index 'NiS.eam.alloy'
+
+variable 		a0 equal 3.52
+variable 		ebulkatom equal -4.44999999950988
+
+# Lattice orientations
+variable		gb1x1 equal 1
+variable		gb1x2 equal -5
+variable		gb1x3 equal 0
+variable		gb1y1 equal 5
+variable		gb1y2 equal 1
+variable		gb1y3 equal 0
+variable		gb1z1 equal 0
+variable		gb1z2 equal 0
+variable		gb1z3 equal 1
+variable		gb2x1 equal -1
+variable		gb2x2 equal 5
+variable		gb2x3 equal 0
+variable		gb2y1 equal 5
+variable		gb2y2 equal 1
+variable		gb2y3 equal 0
+variable		gb2z1 equal 0
+variable		gb2z2 equal 0
+variable		gb2z3 equal -1
+
+# Variables for S insertion
+variable        deltamu equal 0.1 #eV
+variable        sigma string 510
+variable        GBRegion1 equal 53.1249
+variable        GBHalfRegionUpper equal 110.23
+variable 		GBHalfRegionLower equal -2.37
+variable        slice equal 5.0
+variable        t equal 948
+variable        seed equal 63241
+#variable 		con equal 7.86 #S/nm^2
+#variable        mu equal -0.4 #eV
+#variable        bulkS equal -2.9371861774248611
+
+# Find the repeating distances
+variable 		square1 equal ${gb1x1}^2+${gb1x2}^2+${gb1x3}^2
+variable 		square1 equal 1^2+${gb1x2}^2+${gb1x3}^2
+variable 		square1 equal 1^2+-5^2+${gb1x3}^2
+variable 		square1 equal 1^2+-5^2+0^2
+variable 		square2 equal ${gb1y1}^2+${gb1y2}^2+${gb1y3}^2
+variable 		square2 equal 5^2+${gb1y2}^2+${gb1y3}^2
+variable 		square2 equal 5^2+1^2+${gb1y3}^2
+variable 		square2 equal 5^2+1^2+0^2
+variable 		square3 equal ${gb1z1}^2+${gb1z2}^2+${gb1z3}^2
+variable 		square3 equal 0^2+${gb1z2}^2+${gb1z3}^2
+variable 		square3 equal 0^2+0^2+${gb1z3}^2
+variable 		square3 equal 0^2+0^2+1^2
+
+variable repDistx equal 2.5495097567963922
+variable repDisty equal 2.5495097567963922
+variable repDistz equal 1.0
+
+# 3 Layer Structure dimensions (Step1 & Step2)
+variable		xlo3Layer equal -0.001
+variable		xhi3Layer equal 1*${a0}*${repDistx}
+variable		xhi3Layer equal 1*3.52*${repDistx}
+variable		xhi3Layer equal 1*3.52*2.54950975679639
+variable		ylo3Layer equal -0.001
+variable		yhi3Layer equal 8*${a0}*${repDisty}
+variable		yhi3Layer equal 8*3.52*${repDisty}
+variable		yhi3Layer equal 8*3.52*2.54950975679639
+variable		zlo3Layer equal -0.001
+variable		zhi3Layer equal 1*${a0}*${repDistz}
+variable		zhi3Layer equal 1*3.52*${repDistz}
+variable		zhi3Layer equal 1*3.52*1
+variable        GB1 equal ${yhi3Layer}/4
+variable        GB1 equal 71.7941947513863/4
+variable        GB2 equal ${yhi3Layer}/4*3
+variable        GB2 equal 71.7941947513863/4*3
+
+# Iteration Numbers
+variable		iter_x equal 10
+variable		iter_y equal 10
+variable		iter_z equal 10
+
+variable		raster_x equal 10
+
+# Box Dimensions for in.Structures and in.SGCMC
+variable		xlo equal -0.001
+variable		xhi equal 1*${a0}*${repDistx}
+variable		xhi equal 1*3.52*${repDistx}
+variable		xhi equal 1*3.52*2.54950975679639
+variable		ylo equal -0.001
+variable		yhi equal 4*${a0}*${repDisty}
+variable		yhi equal 4*3.52*${repDisty}
+variable		yhi equal 4*3.52*2.54950975679639
+variable		zlo equal -0.001
+variable		zhi equal 1*${a0}*${repDistz}
+variable		zhi equal 1*3.52*${repDistz}
+variable		zhi equal 1*3.52*1
+variable		GB1Str equal 2*${a0}*${repDisty}
+variable		GB1Str equal 2*3.52*${repDisty}
+variable		GB1Str equal 2*3.52*2.54950975679639
+variable		FS1Str equal 3*${a0}*${repDisty}
+variable		FS1Str equal 3*3.52*${repDisty}
+variable		FS1Str equal 3*3.52*2.54950975679639
+
+#####################################################
+#################       (c)       ###################
+#####################################################
+#log 	log.FSnoImpurity
+
+# --------------- INITIALIZATION ------------------
+clear
+if "${IntPotVar} == 1" then "units metal" "atom_style atomic" else "units real" "atom_style charge"
+units metal
+atom_style atomic
+
+dimension 3
+boundary p p p
+
+shell cd RestartFiles
+read_data 	data.GBtoFS
+  orthogonal box = (0.000612 0.011609 -0.000368) to (17.9449 78.2816 7.03916)
+  2 by 16 by 1 MPI processor grid
+  reading atoms ...
+  824 atoms
+  read_data CPU = 0.00326312 secs
+shell cd ..
+# ---------- Define Interatomic Potential ---------------------
+if "${IntPotVar} == 1" then "pair_style      eam/alloy" else "pair_style      reax/c NULL safezone 1.6 mincap 100"
+pair_style      eam/alloy
+
+pair_coeff * * ../../${IntPot} Ni S Ni Ni
+pair_coeff * * ../../NiS.eam.alloy Ni S Ni Ni
+
+if "${IntPotVar} == 0" then "mass 1 58.71" "mass 2 32.06" "mass 1 58.71" "mass 1 58.71"
+
+# ---------- Groups ---------------------------------
+group 			nickel type 1
+824 atoms in group nickel
+group 			sulfur type 2
+0 atoms in group sulfur
+
+#--------------------------- Computations ----------------------------
+compute csym all centro/atom fcc
+compute PE all pe/atom
+compute eatoms all reduce sum c_PE
+
+if "${IntPotVar} == 0" then "fix QEQREAX all qeq/reax 1 0.0 10.0 1.0e-6 ../../paramNiS.qeq"
+
+#----------------------Run Minimization-------------------------
+reset_timestep	0
+
+thermo 10
+thermo_style custom step pe lx ly lz press pxx pyy pzz c_eatoms
+
+shell cd DumpFiles
+dump FSnoImpurityDump all custom 5000 dump.FSnoImpurityDump.* id type x y z c_csym c_PE
+variable NVTVar equal 0 #NVT?
+variable BRVar equal 1 #fix box/relax?
+include ../../../min.config
+min_style cg
+minimize 1e-25 1e-25 1000000 1000000
+WARNING: Using 'neigh_modify every 1 delay 0 check yes' setting during minimization (../min.cpp:168)
+Neighbor list info ...
+  update every 1 steps, delay 0 steps, check yes
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 8.5
+  ghost atom cutoff = 8.5
+  binsize = 4.25, bins = 5 19 2
+  2 neighbor lists, perpetual/occasional/extra = 1 1 0
+  (1) pair eam/alloy, perpetual
+      attributes: half, newton on
+      pair build: half/bin/atomonly/newton
+      stencil: half/bin/3d/newton
+      bin: standard
+  (2) compute centro/atom, occasional
+      attributes: full, newton on
+      pair build: full/bin/atomonly
+      stencil: full/bin/3d
+      bin: standard
+Per MPI rank memory allocation (min/avg/max) = 6.11 | 6.241 | 6.753 Mbytes
+Step PotEng Lx Ly Lz Press Pxx Pyy Pzz c_eatoms 
+       0   -3618.9977    17.944243    78.269977     7.039527   -4359.9995   -4594.6198    -3515.525   -4969.8537   -3618.9977 
+      10   -3624.4954    17.944243    78.269977     7.039527   -2734.4609   -3284.7415   -1021.0599   -3897.5811   -3624.4954 
+      20   -3624.5016    17.944243    78.269977     7.039527   -2368.2462    -3039.826   -469.65551   -3595.2572   -3624.5016 
+      30    -3624.502    17.944243    78.269977     7.039527   -2265.6864   -2967.0062   -311.51919   -3518.5339    -3624.502 
+      40   -3624.5021    17.944243    78.269977     7.039527   -2153.5071   -2894.2671   -141.88988   -3424.3643   -3624.5021 
+      50   -3624.5022    17.944243    78.269977     7.039527   -2100.1841   -2850.3717   -70.541061   -3379.6395   -3624.5022 
+      60   -3624.5022    17.944243    78.269977     7.039527   -2060.7846   -2817.2497   -19.473131   -3345.6309   -3624.5022 
+      70   -3624.5022    17.944243    78.269977     7.039527   -2045.1381   -2802.3062   -1.1417148   -3331.9663   -3624.5022 
+      80   -3624.5022    17.944243    78.269977     7.039527   -2041.6977   -2797.8486    1.8832197   -3329.1278   -3624.5022 
+      90   -3624.5022    17.944243    78.269977     7.039527   -2041.1572   -2796.1357    1.4533537   -3328.7893   -3624.5022 
+     100   -3624.5022    17.944243    78.269977     7.039527   -2041.1659   -2794.8267  0.057450775   -3328.7285   -3624.5022 
+     110   -3624.5022    17.944243    78.269977     7.039527   -2041.1421   -2795.4715   0.75537029   -3328.7103   -3624.5022 
+     120   -3624.5022    17.944243    78.269977     7.039527   -2041.5446   -2796.2782   0.62566262   -3328.9813   -3624.5022 
+     130   -3624.5022    17.944243    78.269977     7.039527   -2041.8364   -2796.4915   0.18163229   -3329.1993   -3624.5022 
+     140   -3624.5022    17.944243    78.269977     7.039527   -2041.9173   -2796.5793   0.10112476   -3329.2735   -3624.5022 
+     150   -3624.5022    17.944243    78.269977     7.039527   -2041.9155   -2796.5759   0.10219186   -3329.2729   -3624.5022 
+     151   -3624.5022    17.944243    78.269977     7.039527   -2041.9166   -2796.5771   0.10084857   -3329.2737   -3624.5022 
+Loop time of 0.134548 on 32 procs for 151 steps with 824 atoms
+
+99.8% CPU use with 32 MPI tasks x no OpenMP threads
+
+Minimization stats:
+  Stopping criterion = energy tolerance
+  Energy initial, next-to-last, final = 
+        -3618.99765216     -3624.50220326     -3624.50220326
+  Force two-norm initial, final = 6.40638 4.46724e-06
+  Force max component initial, final = 2.00771 7.61481e-07
+  Final line search alpha, max atom move = 1 7.61481e-07
+  Iterations, force evaluations = 151 297
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.051128   | 0.094466   | 0.10905    |   5.2 | 70.21
+Neigh   | 0          | 0          | 0          |   0.0 |  0.00
+Comm    | 0.013733   | 0.024958   | 0.065891   |   8.7 | 18.55
+Output  | 0.00081645 | 0.00084348 | 0.0015438  |   0.0 |  0.63
+Modify  | 0          | 0          | 0          |   0.0 |  0.00
+Other   |            | 0.01428    |            |       | 10.61
+
+Nlocal:    25.75 ave 30 max 5 min
+Histogram: 2 0 2 0 0 0 0 0 2 26
+Nghost:    1051.75 ave 1182 max 778 min
+Histogram: 8 0 0 0 0 0 2 2 4 16
+Neighs:    2752.62 ave 3405 max 393 min
+Histogram: 4 0 0 0 0 0 2 0 10 16
+FullNghs:  5505.25 ave 6724 max 606 min
+Histogram: 2 2 0 0 0 0 0 4 2 22
+
+Total # of neighbors = 176168
+Ave neighs/atom = 213.796
+Neighbor list builds = 0
+Dangerous builds = 0
+if "${BRVar} == 1" then "fix BoxRelax all box/relax iso 0.0 vmax 0.001" "min_style cg" "minimize 1e-08 0.0 1000 1000000" "unfix BoxRelax" "min_style cg" "minimize 1e-08 0.0 1000 1000000"
+fix BoxRelax all box/relax iso 0.0 vmax 0.001
+min_style cg
+minimize 1e-08 0.0 1000 1000000
+WARNING: Using 'neigh_modify every 1 delay 0 check yes' setting during minimization (../min.cpp:168)
+Per MPI rank memory allocation (min/avg/max) = 6.11 | 6.241 | 6.753 Mbytes
+Step PotEng Lx Ly Lz Press Pxx Pyy Pzz c_eatoms 
+     151   -3624.5022    17.944243    78.269977     7.039527   -2041.9166   -2796.5771   0.10084857   -3329.2737   -3624.5022 
+     153   -3624.5101    17.936773    78.237395    7.0365966    2.7246724   -744.30328    2031.4362   -1278.9589   -3624.5101 
+Loop time of 0.00642706 on 32 procs for 2 steps with 824 atoms
+
+96.5% CPU use with 32 MPI tasks x no OpenMP threads
+
+Minimization stats:
+  Stopping criterion = energy tolerance
+  Energy initial, next-to-last, final = 
+        -3624.50220326     -3624.51006612     -3624.51006627
+  Force two-norm initial, final = 37.8018 0.0909831
+  Force max component initial, final = 37.8018 0.0503996
+  Final line search alpha, max atom move = 0.00896267 0.000451715
+  Iterations, force evaluations = 2 4
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.00098123 | 0.0016734  | 0.0019149  |   0.6 | 26.04
+Neigh   | 0          | 0          | 0          |   0.0 |  0.00
+Comm    | 0.00024049 | 0.00040627 | 0.0010063  |   0.0 |  6.32
+Output  | 0          | 0          | 0          |   0.0 |  0.00
+Modify  | 0          | 0          | 0          |   0.0 |  0.00
+Other   |            | 0.004347   |            |       | 67.64
+
+Nlocal:    25.75 ave 30 max 6 min
+Histogram: 2 0 2 0 0 0 0 0 2 26
+Nghost:    1053.62 ave 1182 max 779 min
+Histogram: 8 0 0 0 0 0 2 2 4 16
+Neighs:    2751.06 ave 3407 max 477 min
+Histogram: 4 0 0 0 0 0 2 0 13 13
+FullNghs:  5504.12 ave 6732 max 727 min
+Histogram: 2 2 0 0 0 0 0 4 2 22
+
+Total # of neighbors = 176132
+Ave neighs/atom = 213.752
+Neighbor list builds = 0
+Dangerous builds = 0
+unfix BoxRelax
+min_style cg
+minimize 1e-08 0.0 1000 1000000
+WARNING: Using 'neigh_modify every 1 delay 0 check yes' setting during minimization (../min.cpp:168)
+Per MPI rank memory allocation (min/avg/max) = 6.11 | 6.241 | 6.753 Mbytes
+Step PotEng Lx Ly Lz Press Pxx Pyy Pzz c_eatoms 
+     153   -3624.5101    17.936773    78.237395    7.0365966    2.7246724   -744.30328    2031.4362   -1278.9589   -3624.5101 
+     160   -3624.5119    17.936773    78.237395    7.0365966   -461.74145   -1116.1791    1398.2235   -1667.2688   -3624.5119 
+     170   -3624.5141    17.936773    78.237395    7.0365966   -1028.9841    -1544.107    587.28047   -2130.1257   -3624.5141 
+     179   -3624.5155    17.936773    78.237395    7.0365966   -1403.4184   -1841.3079     88.61757   -2457.5648   -3624.5155 
+Loop time of 0.0253033 on 32 procs for 26 steps with 824 atoms
+
+99.7% CPU use with 32 MPI tasks x no OpenMP threads
+
+Minimization stats:
+  Stopping criterion = energy tolerance
+  Energy initial, next-to-last, final = 
+        -3624.51006627     -3624.51544526     -3624.51547478
+  Force two-norm initial, final = 0.0757483 0.0203533
+  Force max component initial, final = 0.015554 0.00361088
+  Final line search alpha, max atom move = 1 0.00361088
+  Iterations, force evaluations = 26 52
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0.0095181  | 0.016765   | 0.019154   |   2.1 | 66.26
+Neigh   | 0          | 0          | 0          |   0.0 |  0.00
+Comm    | 0.0025241  | 0.0042168  | 0.010647   |   3.5 | 16.66
+Output  | 0.00010783 | 0.00010904 | 0.00011161 |   0.0 |  0.43
+Modify  | 0          | 0          | 0          |   0.0 |  0.00
+Other   |            | 0.004213   |            |       | 16.65
+
+Nlocal:    25.75 ave 30 max 6 min
+Histogram: 2 0 2 0 0 0 0 0 2 26
+Nghost:    1053.62 ave 1182 max 779 min
+Histogram: 8 0 0 0 0 0 2 2 4 16
+Neighs:    2752.06 ave 3407 max 481 min
+Histogram: 4 0 0 0 0 0 2 0 12 14
+FullNghs:  5504.12 ave 6732 max 727 min
+Histogram: 2 2 0 0 0 0 0 4 2 22
+
+Total # of neighbors = 176132
+Ave neighs/atom = 213.752
+Neighbor list builds = 0
+Dangerous builds = 0
+
+if "${NVTVar} == 1" then "fix 			NVTFix all nvt temp 300.0 300.0 1.0" "run 			5000" "unfix 			NVTFix" "fix BoxRelax2 all box/relax iso 0.0 vmax 0.001" "min_style cg" "minimize 1e-08 0.0 1000 1000000" "unfix BoxRelax2"
+run 0
+WARNING: No fixes defined, atoms won't move (../verlet.cpp:52)
+Per MPI rank memory allocation (min/avg/max) = 4.985 | 5.139 | 5.628 Mbytes
+Step PotEng Lx Ly Lz Press Pxx Pyy Pzz c_eatoms 
+     179   -3624.5155    17.936773    78.237395    7.0365966   -1403.4184   -1841.3079     88.61757   -2457.5648   -3624.5155 
+Loop time of 3.55282e-06 on 32 procs for 0 steps with 824 atoms
+
+130.2% CPU use with 32 MPI tasks x no OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 0          | 0          | 0          |   0.0 |  0.00
+Neigh   | 0          | 0          | 0          |   0.0 |  0.00
+Comm    | 0          | 0          | 0          |   0.0 |  0.00
+Output  | 0          | 0          | 0          |   0.0 |  0.00
+Modify  | 0          | 0          | 0          |   0.0 |  0.00
+Other   |            | 3.553e-06  |            |       |100.00
+
+Nlocal:    25.75 ave 30 max 7 min
+Histogram: 2 2 0 0 0 0 0 0 2 26
+Nghost:    1053.62 ave 1163 max 780 min
+Histogram: 6 2 0 0 0 0 2 2 0 20
+Neighs:    2750.94 ave 3362 max 540 min
+Histogram: 4 0 0 0 0 0 2 0 6 20
+FullNghs:  5504.12 ave 6732 max 727 min
+Histogram: 2 2 0 0 0 0 0 4 2 22
+
+Total # of neighbors = 176132
+Ave neighs/atom = 213.752
+Neighbor list builds = 0
+Dangerous builds = 0
+undump FSnoImpurityDump
+shell cd ..
+
+#variable N equal count(all), counts the total number of atoms in the cell
+#the total number of atoms is stored to the variable N
+
+variable N equal count(all)
+variable noFS equal $N
+variable noFS equal 824
+
+#variable Ei equal "c_eatoms" computes the initial energy of the cell system
+#E is needed to store the initial energy of the system to the variable Ei
+
+variable E equal "c_eatoms"
+if "${IntPotVar} == 1" then "variable Ei equal $E" else "variable Ei equal $E/23.06035  #eV"
+variable Ei equal $E
+variable Ei equal -3624.51547478031
+
+variable 		FSarea equal "lx * lz"
+variable FEFS equal (${Ei}-${noFS}*${ebulkatom})/(2*${FSarea})*16.02177	#J/m^2
+variable FEFS equal (-3624.51547478031-${noFS}*${ebulkatom})/(2*${FSarea})*16.02177	
+variable FEFS equal (-3624.51547478031-824*${ebulkatom})/(2*${FSarea})*16.02177	
+variable FEFS equal (-3624.51547478031-824*-4.44999999950988)/(2*${FSarea})*16.02177	
+variable FEFS equal (-3624.51547478031-824*-4.44999999950988)/(2*126.213838191934)*16.02177	
+variable EFS equal ${Ei}
+variable EFS equal -3624.51547478031
+
+# ----------- Restart File -------------------------------------
+shell cd RestartFiles
+write_restart 	restart.FS
+shell cd ..
+
+#####################################
+
+shell cd Results
+print 			"""${noFS} ${EFS} ${FEFS}""" append InitialEnergiesFS screen no
+shell cd ..
+
+######################################
+# SIMULATION DONE
+print "All done"
+All done
+print "Total number of FS atoms = ${noFS}"
+Total number of FS atoms = 824
+print "Total FS energy = ${EFS} eV"
+Total FS energy = -3624.51547478031 eV
+print "FS formation energy = ${FEFS} J/m^2"
+FS formation energy = 2.6838298433184 J/m^2
+Total wall time: 0:00:02
